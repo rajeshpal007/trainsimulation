@@ -1,4 +1,280 @@
-//
+#include<string.h>
+#include<stdio.h>
+#include<stdlib.h>
+
+#define MAX 300
+
+/* Data Structure */
+struct resources
+{
+    int resourceQuantity;
+    char resourceName[MAX];
+    struct resources *next;
+};
+
+struct station
+{
+    int  portNumber;
+    char stationName[MAX];
+    struct station *next;
+};
+
+void shut_down(int errorNumber)
+{
+    switch( errorNumber)
+    {
+        case 0:
+            exit(0);
+        case 1:
+        printf("\nsdsdUsage: station name authfile logfile [port [host]]");
+        break;
+        case 2:
+        printf("Invalid name/auth");
+        break;
+        case 3:
+        printf("Unable to open log");
+        break;
+        case 4:
+        printf("Invalid port");
+        break;
+        case 5:
+        printf("Listen error");
+        break;
+        case 6:
+        printf("Unable to connect to station ");
+        break;
+        case 7:
+        printf("Duplicate station names");
+        break;
+        case 99:
+        printf("Unspecified system call failure");
+        break;
+    }
+
+    exit(errorNumber);
+}
+
+struct resources *insert_resources(struct resources *front, int resourceQuantity, char resourceName[])
+{
+
+    struct resources *newnode;
+//   printf("\n insert_resources called with resourceQuantity %d resourceName %s",resourceQuantity, resourceName);
+
+    newnode = (struct resources*)malloc(sizeof(struct resources));
+
+    if (newnode == NULL)
+    {
+        printf("\n Allocation failed \n");
+        exit(2);
+    }
+    newnode->resourceQuantity = resourceQuantity;
+    strcpy(newnode->resourceName, resourceName);
+    newnode->next = front;
+    front = newnode;
+    return(front);
+}
+
+struct station *insert_station(struct station *front, int portNum, char stationName[])
+{
+
+    struct station *newnode;
+    newnode = (struct station*)malloc(sizeof(struct station));
+    if (newnode == NULL)
+    {
+        printf("\n Allocation failed \n");
+        exit(2);
+    }
+    newnode->portNumber = portNum;
+    strcpy(newnode->stationName, stationName);
+    newnode->next = front;
+    front = newnode;
+    return(front);
+
+
+}
+
+void printResource(struct resources *r)
+{
+    printf("\n Resource quantity  : %d", r->resourceQuantity);
+    printf("  Resource Name  : %s", r->resourceName);
+}
+
+void printStation(struct station *p)
+{
+    printf("\n Port Number  : %d", p->portNumber);
+    printf("  Station Name  : %s", p->stationName);
+}
+
+void display_all_stations(struct station  *front)
+{
+    struct station *ptr;
+    for (ptr = front; ptr != NULL; ptr = ptr->next)
+    {
+        printStation(ptr);
+    }
+}
+
+void display_all_resources(struct resources  *front)
+{
+    struct resources *ptr;
+    for (ptr = front; ptr != NULL; ptr = ptr->next)
+    {
+        printResource(ptr);
+    }
+}
+
+int state; /* 0 doomtrain  , 1 stoptrain , 2 add , 3 resourses */
+int send_doomtrain(void);
+int stop_stop_station(void);
+
+
+train_processing(char * trainMessage)
+{
+
+   char string[]="dest:doomtrain:stopstation:add(1111@1hostname,2222@2hostname):res1+1,res2+1,res3-1";
+// char string[]="dest";
+
+//    char *inputString = string;
+ char *inputString = trainMessage;
+
+    /* Delimeter set for State machine */
+    char *delimeterColon = ":";
+    char *delimeterAt = "@";
+    char *delimeterAdd = "(";
+    char *delimeterParenthesisClose = ")";
+    char *delimeterPlus = "+";
+    char *delimeterMinus = "-";
+    char *delimeterComa = ",";
+    char *delimeterStationNameColon = ":";
+    char * token = NULL;
+    char * tokenAllResourcePair = NULL;
+    char * resourceName = NULL;
+    char * resourceQuantity = NULL;
+    char * tokenResourcePair = NULL;
+    char * tokenAllConnectingStations = NULL;
+    char * tokenConnectingStation = NULL;
+    char * portNumber = NULL;
+    char * delim = NULL;
+
+    delim = delimeterColon;
+    int state = -1;
+
+    struct station *stationList = NULL;
+    struct resources *resourceList = NULL;
+
+    printf("\n Input String = %s\n", inputString);
+
+    while ( token = strsep(&inputString, delimeterColon)  )
+    {
+        if( state == -1 )
+        {
+
+            if (strcmp("dest", token) ==0)
+            {
+                state++;
+                //    printf("\n Station Name matches %s\n Remaining string  is : %s \n", token, inputString);
+                continue;
+            }
+            else   break;
+        }
+
+        if ( '\0' == token)
+        {
+            printf("\n\nNothing left to.");
+            break;
+
+        }
+
+//        printf("\n TOKEN ::::%s;:::::\n", token);
+
+
+        /* case : doomtrainstop and stop train */
+        if (strcmp("doomtrain",token) ==0)
+        {
+            printf("\n Doomtrain encountered");
+        }
+        else if (strcmp("stopstation",token) ==0)
+        {
+            printf("\n stoptrain encountered");
+        }
+        else if (strncmp("add(",token,4) ==0)
+        {
+//       printf("\n add( encountered");    /* All Connecting Station are here*/
+
+            tokenAllConnectingStations = strsep(&token, delimeterAdd); // must return NULL
+            tokenAllConnectingStations = strsep(&token, delimeterParenthesisClose);
+//        printf("\n tokenAllConnectingStations %s  token %s",tokenAllConnectingStations, token);
+
+            for (; tokenConnectingStation = strsep(&tokenAllConnectingStations, delimeterComa);)
+            {
+                if( NULL != strrchr(tokenConnectingStation,'@'))
+                {
+                    portNumber = strsep(&tokenConnectingStation, delimeterAt);
+                    stationList = insert_station(stationList, atoi(portNumber), tokenConnectingStation);
+             //      printf("\n insert_station portNumber: %s hostname : %s",portNumber, tokenConnectingStation);
+                }
+                else
+                {
+                    /* Bad Port Hostname pair*/
+                    printf("In Port Hostname pair @ not found");
+                    exit;
+                }
+            }         /* End : Connecting Station are here*/
+
+        }
+        else
+        {
+            //       printf("\n In Resource List %s %s",token , inputString);
+            tokenAllResourcePair=token;
+            /* Resources are here*/
+            for (; tokenResourcePair = strsep(&tokenAllResourcePair, delimeterComa );)
+            {
+
+  //                printf("\n In Resource tokenAllResourcePair  %s  tokenResourcePair %s",tokenAllResourcePair , tokenResourcePair);
+
+                if ( NULL ==  tokenResourcePair)
+                {
+                    printf("\n No more tokenResourcePair");
+                    break;
+                }
+                else
+
+                    if( NULL != strrchr(tokenResourcePair,'+'))
+                    {
+                        resourceName = strsep(&tokenResourcePair, delimeterPlus);
+                        resourceList = insert_resources(resourceList, atoi(tokenResourcePair), resourceName);
+//                        printf("\n                insert_resources  resourceName : %s resourceQuantity %s",resourceName, tokenResourcePair);
+                    }
+                    else if( NULL != strrchr(tokenResourcePair,'-'))
+                    {
+                        resourceName = strsep(&tokenResourcePair, delimeterMinus);
+                        resourceList = insert_resources(resourceList, atoi(tokenResourcePair), resourceName);
+  //                      printf("\n                insert_resources  resourceName : %s resourceQuantity %s",resourceName, tokenResourcePair);
+                    }
+                    else
+                    {
+                        /* Bad resource & quantity*/
+                        printf("In resource pair, + or - not found");
+                     //   exit;
+                    }
+            }         /* End : Resources are here*/
+        }
+
+
+    } /* first for loop ends here */
+
+
+  display_all_stations(stationList);
+  display_all_resources(resourceList);
+printf("\n");
+
+}
+
+
+
+
+
+
 //  station.c
 //  csse3410A4
 //
@@ -90,6 +366,8 @@ int main(int argc, char* argv[]) {
 	    return 1;
      }*/
     int ret;
+    char buffer[256];
+
     ret = check_argument_number(argc);
     if (ret) {
         return ret;
@@ -176,29 +454,39 @@ int main(int argc, char* argv[]) {
     servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
 
     servaddr.sin_port=htons(port);
-    
+
     bind(listenfd,(struct sockaddr *)&servaddr,sizeof(servaddr));
-    
+
     if (listen(listenfd,1024) == -1) {
         fprintf(stderr, "Unspecified system call failure\n");
         exit(99);
     }
-    
-    for (;; ) {
-        int connfd;
-        socklen_t clilen;
-        struct sockaddr_in cliaddr;
-        
-        connfd = accept(listenfd,(struct sockaddr *)&cliaddr,&clilen);
-        
-        //TODO: start thread to handle connection here...
+
+
+int connfd;
+int n=0;
+socklen_t clilen;
+struct sockaddr_in cliaddr;
+
+connfd = accept(listenfd,(struct sockaddr *)&cliaddr,&clilen);
+
+for (;; )
+{  n=0;
+   bzero(buffer,256);
+   n = read( connfd,buffer,255 );
+
+   if (n < 0) {
+      perror("ERROR reading from socket");
+      exit(1);
+   }
+//TODO: start thread to handle connection here...
         printf("go a connection\n");
-        
-        close(connfd);
-    }
-    
-    close(listenfd);
+train_processing(buffer);
+}
+       close(connfd);
+   close(listenfd);
+
     return 0;
-    
-    
+
+
 }
