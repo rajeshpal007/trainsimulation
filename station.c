@@ -1,6 +1,14 @@
-#include<string.h>
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <errno.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 #define MAX 300
 
@@ -26,7 +34,7 @@ void shut_down(int errorNumber)
         case 0:
             exit(0);
         case 1:
-        printf("\nsdsdUsage: station name authfile logfile [port [host]]");
+        printf("\nsdsdUsage: station name authfile logfile [port] [host]");
         break;
         case 2:
         printf("Invalid name/auth");
@@ -269,32 +277,6 @@ train_processing(char * trainMessage)
 printf("\n");
 
 }
-
-
-
-
-
-
-//  station.c
-//  csse3410A4
-//
-//  Created by Haythm Alshehab on 7/10/2015.
-//  Copyright © 2015 Haythm Alshehab. All rights reserved.
-//
-// Started 09/07/2015 5:17 pm
-
-
-#include <stdio.h>
-#include <ctype.h>
-#include <errno.h>
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 
 #define TRUE 1
